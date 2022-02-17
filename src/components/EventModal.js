@@ -23,10 +23,13 @@ const labels = [
  */
 
 export default function EventModal() {
-    const { setShowEventModal, daySelected, dispatchCalledEvent } = useContext(GlobalContext);
-    const [ title, setTitle ] = useState('');
-    const [ description, setDescription ] = useState('');
-    const [ selectedLabel, setSelectedLabel ] = useState(labels[0]);
+    const { setShowEventModal, daySelected, dispatchCalledEvent, selectedEvent } = useContext(GlobalContext);
+    const [ title, setTitle ] = useState(selectedEvent ? selectedEvent.title : "");
+    const [ description, setDescription ] = useState(selectedEvent ? selectedEvent.description : "");
+    const [ selectedLabel, setSelectedLabel ] = useState(selectedEvent
+        ? labels.find((lbl) => lbl === selectedEvent.label)
+        : labels[0]
+    );
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -35,9 +38,13 @@ export default function EventModal() {
             description,
             label: selectedLabel,
             day: daySelected.valueOf(),
-            id: Date.now(),
+            id: selectedEvent ? selectedEvent.id : Date.now(),
         };
-        dispatchCalledEvent({type: "push", payload: calendarEvent});
+        if (selectedEvent) {
+            dispatchCalledEvent({ type: "update", payload: calendarEvent });
+        } else {
+            dispatchCalledEvent({ type: "push", payload: calendarEvent });
+        }
         setShowEventModal(false);
     }
 
@@ -45,14 +52,35 @@ export default function EventModal() {
         <div className='h-screen w-full fixed left-0 top-0 flex justify-center items-center'>
             <form className='bg-white rounded-lg shadow-2xl w-1/4'>
                 <header className='bg-gray-100 px-4 py-2 flex justify-between items-center'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                    </svg>
-                    <button onClick={() => setShowEventModal(false)}>
+                    <div>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                         </svg>
-                    </button>
+                    </div>
+
+                    <div className='flex'>
+                        {selectedEvent && (
+                            <span
+                                onClick={() => { 
+                                    dispatchCalledEvent({
+                                        type: "delete",
+                                        payload: selectedEvent,
+                                    });
+                                    setShowEventModal(false);
+                                }}
+                                className="text-gray-400 cursor-pointer"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </span>
+                        )}
+                        <button onClick={() => setShowEventModal(false)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </header>
                 <div className='p-3'>
                     <div className='grid grid-cols-5 items-end gap-y-7'>
