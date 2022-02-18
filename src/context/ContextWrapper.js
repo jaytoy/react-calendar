@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import React, { useState, useReducer, useEffect } from 'react';
+import React, { useState, useReducer, useEffect, useMemo } from 'react';
 import GlobalContext from './GlobalContext';
 
 function savedEventsReducer(state, { type, payload }) {
@@ -31,6 +31,17 @@ export default function ContextWrapper(props) {
         [],
         initEvents
     );
+    const [labels, setLabels] = useState([]);
+
+    const filteredEvents = useMemo(() => {
+        return savedEvents.filter((evt) =>
+          labels
+            .filter((lbl) => lbl.checked)
+            .map((lbl) => lbl.label)
+            .includes(evt.label)
+        );
+      }, [savedEvents, labels]);
+    
 
     useEffect(() => {
         localStorage.setItem("savedEvents", JSON.stringify(savedEvents));
@@ -41,6 +52,28 @@ export default function ContextWrapper(props) {
             setSelectedEvent(null);
         }
     }, [showEventModal]);
+
+    useEffect(() => {
+        setLabels((prevLabels) => {
+            return [...new Set(savedEvents.map((evt) => evt.label))].map(
+                (label) => {
+                    const currentLabel = prevLabels.find(
+                        (lbl) => lbl.label === label
+                    );
+                    return {
+                        label,
+                        checked: currentLabel ? currentLabel.checked : true,
+                    };
+                }
+            );
+        });
+    }, [savedEvents]);
+
+    function updateLabel(label) {
+        setLabels(
+            labels.map((lbl) => (lbl.label === label.label ? label : lbl))
+        );
+    }
 
     return (
         <GlobalContext.Provider 
@@ -55,6 +88,10 @@ export default function ContextWrapper(props) {
                 dispatchCalledEvent,
                 selectedEvent,
                 setSelectedEvent,
+                labels,
+                setLabels,
+                updateLabel,
+                filteredEvents,
             }}
         >
             {props.children}
